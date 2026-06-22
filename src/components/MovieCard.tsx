@@ -6,10 +6,11 @@ export interface Movie {
   year?: string;
   genres: string[];
   description: string;
+  geminiTake?: string;
   imageUrl?: string;
 }
 
-export function MovieCard({ movie }: { movie: Movie }) {
+export function MovieCard({ movie, onMoreInfo }: { movie: Movie; onMoreInfo?: (movie: Movie) => void }) {
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-colors hover:border-foreground/20">
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-surface-elevated">
@@ -56,8 +57,8 @@ export function MovieCard({ movie }: { movie: Movie }) {
         </p>
 
         <div className="mt-auto pt-2">
-          <a
-            href="#"
+          <button
+            onClick={() => onMoreInfo?.(movie)}
             className="inline-flex items-center gap-1 text-sm text-foreground/90 transition-colors hover:text-foreground"
           >
             More info
@@ -66,7 +67,7 @@ export function MovieCard({ movie }: { movie: Movie }) {
               strokeWidth={2}
               className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
             />
-          </a>
+          </button>
         </div>
       </div>
     </article>

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { SearchInput } from "@/components/SearchInput";
 import { MovieCard, MovieCardSkeleton, type Movie } from "@/components/MovieCard";
+import { MovieDetailModal } from "@/components/MovieDetailModal";
 import { getRecommendations } from "@/lib/mock-recommendations";
 
 export const Route = createFileRoute("/")({
@@ -30,27 +31,41 @@ const SUGGESTIONS = [
   "Romance that doesn't feel cheesy",
 ];
 
+const PAGE_SIZE = 12;
+
 function Index() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<Movie[]>([]);
   const [activePrompt, setActivePrompt] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (prompt: string) => {
     setHasSearched(true);
     setIsLoading(true);
     setActivePrompt(prompt);
     setResults([]);
+    setVisibleCount(PAGE_SIZE);
+    setError(null);
     try {
       const movies = await getRecommendations(prompt);
       setResults(movies);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const visibleMovies = results.slice(0, visibleCount);
+  const hasMore = visibleCount < results.length;
+
   return (
     <div className="min-h-screen bg-background">
+      <MovieDetailModal movie={selectedMovie} onClose={() => setSelectedMovie(null)} />
+
       {/* Sticky search header */}
       <motion.header
         layout
@@ -102,43 +117,66 @@ function Index() {
 
       {/* Results */}
       <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-10">
-        {hasSearched && (
+        {hasSearched && !isLoading && (
           <div className="mb-8 flex items-center gap-3 text-sm text-muted-foreground">
             <span className="uppercase tracking-[0.2em] text-muted-foreground/70">
               Results for
             </span>
             <span className="truncate text-foreground">"{activePrompt}"</span>
+            {results.length > 0 && (
+              <span className="ml-auto shrink-0 text-muted-foreground/50">
+                {results.length} films
+              </span>
+            )}
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-5 py-4 text-sm text-destructive">
+            {error}
           </div>
         )}
 
         {isLoading && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 12 }).map((_, i) => (
               <MovieCardSkeleton key={i} />
             ))}
           </div>
         )}
 
         <AnimatePresence>
-          {!isLoading && results.length > 0 && (
+          {!isLoading && visibleMovies.length > 0 && (
             <motion.div
               key="grid"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
             >
-              {results.map((movie, i) => (
-                <motion.div
-                  key={movie.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <MovieCard movie={movie} />
-                </motion.div>
-              ))}
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {visibleMovies.map((movie, i) => (
+                  <motion.div
+                    key={movie.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: Math.min(i, 11) * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <MovieCard movie={movie} onMoreInfo={setSelectedMovie} />
+                  </motion.div>
+                ))}
+              </div>
+
+              {hasMore && (
+                <div className="mt-12 flex justify-center">
+                  <button
+                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                    className="rounded-xl border border-border bg-surface px-6 py-2.5 text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+                  >
+                    Load more · {results.length - visibleCount} remaining
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
