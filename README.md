@@ -4,6 +4,14 @@ Describe a mood, a memory, or a vibe — get back a curated set of films, picked
 
 ![Built with TanStack Start](https://img.shields.io/badge/TanStack%20Start-grey) ![TypeScript](https://img.shields.io/badge/TypeScript-blue) ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-38bdf8)
 
+![Reel](src/assets/thumbnail.png)
+
+## Screenshots
+
+| Home | Results |
+| --- | --- |
+| ![Home page](src/assets/home_page.png) | ![Movie detail results](src/assets/detail.png) |
+
 ## How it works
 
 1. You type a free-form description of what you want to watch (e.g. *"mind-bending sci-fi with quiet pacing"*).
